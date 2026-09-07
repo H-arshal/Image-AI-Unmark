@@ -1,0 +1,51 @@
+/* =========================================================================
+   tokens.css — single source of truth for design tokens.
+   Imported once in src/main.tsx. Both apps inherit these.
+   ========================================================================= */
+
+:root {
+  /* Surfaces */
+  --void: #14171B;
+  --panel: #1A1E23;
+  --panel-raised: #20252B;
+  --hairline: #2B3138;
+  --hairline-bright: #3A4149;
+
+  /* Text */
+  --text: #ECE8DF;
+  --text-dim: #8B9199;
+  --text-faint: #5D636B;
+
+  /* Accents — shared family palette (Provenance Lab + Image AI-Unmark) */
+  --amber: #D98E4A;
+  --amber-dim: #5A4530;
+  --slate: #5FA8C9;
+  --slate-dim: #2E4D5A;
+  --teal: #4FA88F;
+  --teal-dim: #2C4A42;
+  --brick: #C9695A;
+  --brick-dim: #4A2E29;
+
+  --radius: #3px;
+
+  /* Typography */
+  --font-base: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--void);
+  color: var(--text);
+  font-family: var(--font-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.mono { font-family: var(--font-mono); }
+
+/* Focus ring (used everywhere — accessibility) */
+:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
