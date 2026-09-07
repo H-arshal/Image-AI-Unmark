@@ -50,7 +50,7 @@ interface FileState {
   analysis: Analysis;
 }
 
-export function ProvenanceLab() {
+export function AIUnmark() {
   const [state, setState] = useState<FileState | null>(null);
   const [selected, setSelected] = useState<Set<Category>>(new Set());
   const [error, setError] = useState<string>('');
@@ -195,8 +195,8 @@ export function ProvenanceLab() {
     <>
       <header className="app-header">
         <div>
-          <h1>Provenance Lab</h1>
-          <p>Know what your image contains. Choose what to remove. Verify the result — privately, in your browser.</p>
+          <h1>Image AI-Unmark</h1>
+          <p>Inspect declared metadata, then strip the parts you don't want. Verify the result — privately, in your browser.</p>
         </div>
         <div className="build-tag mono">local-first<br />no upload · no server</div>
       </header>
