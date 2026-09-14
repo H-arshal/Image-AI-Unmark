@@ -1,51 +1,51 @@
-/* =========================================================================
-   tokens.css — single source of truth for design tokens.
-   Imported once in src/main.tsx. Both apps inherit these.
-   ========================================================================= */
-
 :root {
-  /* Surfaces */
-  --void: #14171B;
-  --panel: #1A1E23;
-  --panel-raised: #20252B;
-  --hairline: #2B3138;
-  --hairline-bright: #3A4149;
+  --color-page: #F7F9F8;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #F4F7F6;
+  --color-surface-hover: #F0F5F3;
 
-  /* Text */
-  --text: #ECE8DF;
-  --text-dim: #8B9199;
-  --text-faint: #5D636B;
+  --color-text-primary: #101827;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748B;
+  --color-text-disabled: #94A3B8;
 
-  /* Accents — shared family palette (Provenance Lab + Image AI-Unmark) */
-  --amber: #D98E4A;
-  --amber-dim: #5A4530;
-  --slate: #5FA8C9;
-  --slate-dim: #2E4D5A;
-  --teal: #4FA88F;
-  --teal-dim: #2C4A42;
-  --brick: #C9695A;
-  --brick-dim: #4A2E29;
+  --color-border: #D7DEE2;
+  --color-border-strong: #BCC7CC;
+  --color-border-focus: #0B8F70;
 
-  --radius: #3px;
+  --color-primary: #078B70;
+  --color-primary-dark: #06735E;
+  --color-primary-light: #E8F6F1;
 
-  /* Typography */
-  --font-base: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+  --color-success: #0A8F70;
+  --color-success-soft: #E8F7F1;
+
+  --color-warning: #F59E0B;
+  --color-warning-soft: #FFF7E6;
+
+  --font-family: "Inter", sans-serif;
+  --font-base: var(--font-family);
+  --font-display: var(--font-family);
+  --font-script: var(--font-family);
+  --font-mono: var(--font-family);
+
+  --radius: 0;
 }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
+html { scrollbar-width: none; }
+html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
 body {
-  background: var(--void);
-  color: var(--text);
-  font-family: var(--font-base);
-  line-height: 1.5;
+  background: var(--color-page);
+  color: var(--color-text-primary);
+  font-family: var(--font-family);
+  line-height: 1.4;
   -webkit-font-smoothing: antialiased;
 }
 .mono { font-family: var(--font-mono); }
 
-/* Focus ring (used everywhere — accessibility) */
 :focus-visible {
-  outline: 2px solid var(--amber);
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
