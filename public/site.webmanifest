@@ -1,0 +1,17 @@
+{
+  "name": "Image AI-Unmark",
+  "short_name": "AI-Unmark",
+  "description": "Privacy-first image metadata inspector and selective stripper.",
+  "start_url": "/Image-AI-Unmark/",
+  "scope": "/Image-AI-Unmark/",
+  "display": "standalone",
+  "background_color": "#F7F9F8",
+  "theme_color": "#078B70",
+  "icons": [
+    { "src": "/Image-AI-Unmark/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/Image-AI-Unmark/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/Image-AI-Unmark/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/Image-AI-Unmark/favicon-32x32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "/Image-AI-Unmark/favicon-16x16.png", "sizes": "16x16", "type": "image/png" }
+  ]
+}

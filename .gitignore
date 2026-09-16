@@ -24,7 +24,7 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Lockfile — committed only if the project switches to a lockfile-pinned workflow.
-package-lock.json
+# package-lock.json
 
 # Test fixtures (binary). Descriptor .txt files are still committed;
 # CI downloads fixtures separately. See docs/CleanLabel_fixtures.md.
