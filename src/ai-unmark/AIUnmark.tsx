@@ -4,7 +4,7 @@ import type { Analysis, Category, ImageFormat, Segment } from '../core';
 import { humanBytes, mimeFor } from '../shared/bytes';
 import { Disclaimer } from '../shared/Disclaimer';
 import './styles.css';
-
+import icon from '../assets/icon.png'
 const LABELS: Record<Category, string> = {
   EXIF: 'EXIF', XMP: 'XMP', IPTC: 'IPTC', ICC: 'ICC',
   C2PA: 'C2PA', COMMENT: 'Comment', TEXT: 'Text', STRUCTURE: ''
@@ -205,7 +205,7 @@ export function AIUnmark() {
         <div>
           <div className="brand-lockup">
             <div className="brand-logo-title">
-              <img src="/icon.png" alt="" />
+              <img src={icon} alt="" />
               <span>Image AI-Unmark</span></div>
             </div>
           <h1>Image AI-Unmark</h1>
