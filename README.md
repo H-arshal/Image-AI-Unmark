@@ -3,6 +3,13 @@
 A privacy-first, client-side image metadata inspector and selective
 stripper. Built with Vite, React, and TypeScript.
 
+## Features
+
+- **Single image** — upload, inspect metadata, strip selected categories, verify cleaned copy
+- **Batch upload** (`multiple`) — select multiple images; metadata aggregated; click **Remove Metadata** to clean all; download `cleaned-images.zip`
+- **Verification** — re-scan cleaned copy; before/after thumbnails; scroll toggle
+- **Local-only** — no server, no upload, no telemetry
+
 ## What it does
 
 Drop a JPEG, PNG, or WebP. Inspect its declared provenance (C2PA,
@@ -96,6 +103,16 @@ post/                       ← content series plan + image assets
 single-file HTML versions from before the rename history. They are
 preserved for reference. The current single-app version lives in
 [`src/ai-unmark/AIUnmark.tsx`](src/ai-unmark/AIUnmark.tsx).
+
+## Deployment
+
+The repo includes `.github/workflows/deploy.yml` for automated GitHub Pages deployment from `main`. The `vite.config.ts` uses `base: '/Image-AI-Unmark/'` for the deployed URL.
+
+Manual deploy (alternative):
+```bash
+npm run build
+# push dist/ contents to gh-pages branch
+```
 
 ## Tech stack
 
