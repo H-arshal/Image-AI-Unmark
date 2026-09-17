@@ -2,8 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { analyze, clean, CATEGORY } from '../core';
 import type { Analysis, Category, ImageFormat, Segment } from '../core';
 import { humanBytes, mimeFor } from '../shared/bytes';
+import JSZip from 'jszip';
 import { Disclaimer } from '../shared/Disclaimer';
 import './styles.css';
+import multiple_images_preview from '../assets/multiple-img-preview.png'
 import icon from '../assets/icon.png'
 const LABELS: Record<Category, string> = {
   EXIF: 'EXIF', XMP: 'XMP', IPTC: 'IPTC', ICC: 'ICC',
@@ -74,6 +76,9 @@ export function AIUnmark() {
   const [error, setError] = useState<string>('');
   const [cleaned, setCleaned] = useState<{ bytes: Uint8Array; format: ImageFormat } | null>(null);
   const [showVerification, setShowVerification] = useState(false);
+  const [batchFiles, setBatchFiles] = useState<File[]>([]);
+  const [batchAnalyses, setBatchAnalyses] = useState<Analysis[]>([]);
+  const [batchResults, setBatchResults] = useState<{ file: File; cleanedBytes: Uint8Array; format: ImageFormat }[]>([]);
 
   const dropzoneRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -95,6 +100,9 @@ export function AIUnmark() {
     setState(null);
     setCleaned(null);
     setShowVerification(false);
+    setBatchFiles([]);
+    setBatchAnalyses([]);
+    setBatchResults([]);
     clearError();
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, [clearError, state]);
@@ -115,6 +123,9 @@ export function AIUnmark() {
       if (state?.previewUrl) URL.revokeObjectURL(state.previewUrl);
       setState({ file, bytes: buf, analysis, ...imageInfo });
       setCleaned(null);
+      setBatchFiles([]);
+      setBatchAnalyses([]);
+      setBatchResults([]);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       showError(msg);
@@ -152,6 +163,19 @@ export function AIUnmark() {
     if (!state) return;
     clearError();
     try {
+      if (batchFiles.length > 1) {
+        const results: { file: File; cleanedBytes: Uint8Array; format: ImageFormat }[] = [];
+        for (const file of batchFiles) {
+          const bytes = new Uint8Array(await file.arrayBuffer());
+          const analysis = analyze(bytes);
+          const removeCats = CATEGORY_ORDER.filter(category => analysis.found[category].length > 0);
+          const { bytes: cleanedBytes, format } = clean(bytes, removeCats);
+          results.push({ file, cleanedBytes, format });
+        }
+        setBatchResults(results);
+        return;
+      }
+
       const removeCats = CATEGORY_ORDER.filter(category => state.analysis.found[category].length > 0);
       const { bytes: cleanedBytes, format } = clean(state.bytes, removeCats);
 
@@ -183,10 +207,49 @@ export function AIUnmark() {
       const msg = e instanceof Error ? e.message : String(e);
       showError('Could not generate a clean copy: ' + msg);
     }
-  }, [state, clearError, showError]);
+  }, [batchFiles, state, clearError, showError]);
+
+  const handleBatch = useCallback(async (files: File[]) => {
+    clearError();
+    setBatchFiles(files);
+    setBatchResults([]);
+    if (files.length > 0) {
+      const analyses: Analysis[] = [];
+      for (const file of files) {
+        analyses.push(analyze(new Uint8Array(await file.arrayBuffer())));
+      }
+      setBatchAnalyses(analyses);
+      const bytes = new Uint8Array(await files[0].arrayBuffer());
+      const imageInfo = await readImageInfo(files[0]);
+      setState({ file: files[0], bytes, analysis: analyze(bytes), ...imageInfo });
+    }
+  }, [clearError]);
+
+  const handleDownloadZip = useCallback(async () => {
+    if (batchResults.length === 0) return;
+    const zip = new JSZip();
+    for (const r of batchResults) {
+      const ext = r.format === 'jpeg' ? 'jpg' : r.format;
+      const name = r.file.name.replace(/\.[^.]+$/, '') + '-clean.' + ext;
+      zip.file(name, r.cleanedBytes);
+    }
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cleaned-images.zip';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [batchResults]);
 
   const afterAnalysis = cleaned ? analyze(cleaned.bytes) : null;
-  const hasMetadata = state ? CATEGORY_ORDER.some(category => state.analysis.found[category].length > 0) : false;
+  const batchMetadata = CATEGORY_ORDER.map(category => ({
+    category,
+    segments: batchAnalyses.flatMap(analysis => analysis.found[category] || [])
+  })).filter(item => item.segments.length > 0);
+  const hasMetadata = batchFiles.length > 1
+    ? batchMetadata.length > 0
+    : state ? CATEGORY_ORDER.some(category => state.analysis.found[category].length > 0) : false;
 
   // Redraw thumbnails when verification panel is shown
   useEffect(() => {
@@ -235,24 +298,42 @@ export function AIUnmark() {
             <div className="primary">Drop an image here</div>
             <div className="secondary">or click to choose a file<br />Supports: .jpg .jpeg .png .webp</div>
             <button className="choose-btn" type="button" onClick={event => { event.stopPropagation(); fileInputRef.current?.click(); }}>Choose Image</button>
-            <input ref={fileInputRef} type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" onChange={e => handleFile(e.target.files?.[0])} />
+            <input ref={fileInputRef} type="file" multiple accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" onChange={e => {
+              const files = Array.from(e.target.files || []);
+              if (files.length > 0) {
+                // Process first file for single preview, or batch all
+                if (files.length === 1) handleFile(files[0]);
+                else handleBatch(files);
+              }
+            }} />
           </div>
         </section>
 
         <section className="surface-panel selected-panel">
           <div className="selected-top">
-            {state ? <img className="preview" src={state.previewUrl} alt="Selected image preview" /> : <div className="preview" aria-hidden="true" />}
+            {batchFiles.length > 1 ? (
+              <img className="preview" src={multiple_images_preview} alt="Multiple images selected" />
+            ) : state ? (
+              <img className="preview" src={state.previewUrl} alt="Selected image preview" />
+            ) : (
+              <div className="preview" aria-hidden="true" />
+            )}
             <div className="selected-meta">
-              <h2>Selected Image</h2>
+              <h2>{batchFiles.length > 1 ? 'Selected Images' : 'Selected Image'}</h2>
               {state ? <>
-                <strong>{state.file.name}</strong>
-                <p className="summary">{humanBytes(state.file.size)} | {state.width} × {state.height} | {state.file.type || 'unknown type'}</p>
-                <dl className="info-list">
-                  <div><dt>File name</dt><dd>{state.file.name}</dd></div>
-                  <div><dt>File type</dt><dd>{state.file.type || 'unknown type'}</dd></div>
-                  <div><dt>Dimensions</dt><dd>{state.width} × {state.height}</dd></div>
-                  <div><dt>File size</dt><dd>{humanBytes(state.file.size)}</dd></div>
-                </dl>
+                {batchFiles.length > 1 ? <>
+                  <strong>{batchFiles.length} images selected</strong>
+                  <p className="summary">Ready to inspect and clean as a batch</p>
+                </> : <>
+                  <strong>{state.file.name}</strong>
+                  <p className="summary">{humanBytes(state.file.size)} | {state.width} × {state.height} | {state.file.type || 'unknown type'}</p>
+                  <dl className="info-list">
+                    <div><dt>File name</dt><dd>{state.file.name}</dd></div>
+                    <div><dt>File type</dt><dd>{state.file.type || 'unknown type'}</dd></div>
+                    <div><dt>Dimensions</dt><dd>{state.width} × {state.height}</dd></div>
+                    <div><dt>File size</dt><dd>{humanBytes(state.file.size)}</dd></div>
+                  </dl>
+                </>}
               </> : <p>Select an image to inspect its declared metadata.</p>}
             </div>
           </div>
@@ -265,13 +346,15 @@ export function AIUnmark() {
       {state && (
         <section className="metadata-panel">
           <div className="panel-head">
-            <div><h2>Detected Metadata</h2><span className="section-description">Metadata and additional information found in this image.</span></div>
-            <span className="sub mono">{state.analysis.format.toUpperCase()} · {humanBytes(state.analysis.byteLength)}</span>
+            <div><h2>Detected Metadata</h2><span className="section-description">{batchFiles.length > 1 ? `Metadata found across ${batchFiles.length} selected images` : 'Metadata and additional information found in this image.'}</span></div>
+            <span className="sub mono">{batchFiles.length > 1 ? `${batchFiles.length} FILES` : state.analysis.format.toUpperCase()} · {humanBytes(state.bytes.length)}</span>
           </div>
           <div className="table-head"><span aria-hidden="true" /><span>Type</span><span>Status</span><span>Details</span><span>Size</span></div>
           <div className="readout">
-            {CATEGORY_ORDER.filter(cat => state.analysis.found[cat]?.length > 0).map(cat => {
-              const segs = state.analysis.found[cat] || [];
+            {(batchFiles.length > 1 ? batchMetadata : CATEGORY_ORDER
+              .filter(cat => state.analysis.found[cat]?.length > 0)
+              .map(cat => ({ category: cat, segments: state.analysis.found[cat] || [] })))
+              .map(({ category: cat, segments: segs }) => {
               const totalBytes = segs.reduce((sum, s) => sum + segBytes(s), 0);
               const detail = segs.map(s => detailLine({ category: cat, seg: s })).filter(Boolean).join(' / ');
               return (
@@ -284,7 +367,7 @@ export function AIUnmark() {
                 </div>
               );
             })}
-            {CATEGORY_ORDER.every(cat => state.analysis.found[cat]?.length === 0) && (
+            {(batchFiles.length > 1 ? batchMetadata.length === 0 : CATEGORY_ORDER.every(cat => state.analysis.found[cat]?.length === 0)) && (
               <div className="metadata-empty">No declared metadata found in this image.</div>
             )}
           </div>
@@ -302,10 +385,16 @@ export function AIUnmark() {
         <button className="go-btn" style={{ background: 'var(--color-primary)', color: '#fff', border: '1px solid var(--color-primary)' }} onClick={handleClean} disabled={!hasMetadata}>
           ✦ &nbsp; {hasMetadata ? 'Remove Metadata' : 'No metadata found'}
         </button>
-        <a ref={downloadRef} className={`download-btn ${cleaned ? '' : 'is-disabled'}`} download aria-disabled={!cleaned}>↓ &nbsp; Download cleaned image</a>
+        {batchResults.length > 0 ? (
+          <button className="go-btn" style={{ background: batchResults.length > 0 ? 'var(--color-success)' : 'var(--color-surface-muted)', color: batchResults.length > 0 ? '#fff' : 'var(--color-text-disabled)', border: batchResults.length > 0 ? '1px solid var(--color-success)' : '1px solid var(--color-border)' }} onClick={handleDownloadZip} disabled={batchResults.length === 0}>
+            ↓ &nbsp; Download ZIP ({batchResults.length})
+          </button>
+        ) : (
+          <a ref={downloadRef} className={`download-btn ${cleaned ? '' : 'is-disabled'}`} download aria-disabled={!cleaned}>↓ &nbsp; Download cleaned image</a>
+        )}
       </div>}
 
-      {cleaned && afterAnalysis && state && (
+      {(cleaned && afterAnalysis && state && batchResults.length <= 1) && (
         <>
           <div className="action-bar">
             <button
