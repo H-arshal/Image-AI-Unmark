@@ -3,9 +3,9 @@ import { analyze, clean, CATEGORY } from '../core';
 import type { Analysis, Category, ImageFormat, Segment } from '../core';
 import { humanBytes, mimeFor } from '../shared/bytes';
 import JSZip from 'jszip';
+import { BatchCollage } from './BatchCollage';
 import { Disclaimer } from '../shared/Disclaimer';
 import './styles.css';
-import multiple_images_preview from '../assets/multiple-img-preview.png'
 import icon from '../assets/icon.png'
 const LABELS: Record<Category, string> = {
   EXIF: 'EXIF', XMP: 'XMP', IPTC: 'IPTC', ICC: 'ICC',
@@ -312,7 +312,7 @@ export function AIUnmark() {
         <section className="surface-panel selected-panel">
           <div className="selected-top">
             {batchFiles.length > 1 ? (
-              <img className="preview" src={multiple_images_preview} alt="Multiple images selected" />
+              <BatchCollage files={batchFiles} />
             ) : state ? (
               <img className="preview" src={state.previewUrl} alt="Selected image preview" />
             ) : (

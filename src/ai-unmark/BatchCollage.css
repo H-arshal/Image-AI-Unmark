@@ -1,0 +1,9 @@
+.batch-collage {
+  border: 2px solid var(--color-border-strong);
+  border-radius: 8px;
+  gap: 4px;
+  padding: 4px;
+  background: var(--color-surface-muted);
+  display: block;
+  max-width: 100%;
+}
